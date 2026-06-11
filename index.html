@@ -1,0 +1,677 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Video SRT Cleaner</title>
+<style>
+:root {
+  --bg: #0a0a0a;
+  --panel: #141414;
+  --panel-2: #1c1c1c;
+  --ink: #e8e8e8;
+  --ink-soft: #888888;
+  --rule: #2a2a2a;
+  --cyan: #5fd9ff;
+  --cyan-deep: #8ee5ff;
+  --yellow: #ffe070;
+  --yellow-deep: #ffea90;
+  --ok: #5ad078;
+  --warn: #d8a040;
+  --err: #e07868;
+  --code-bg: #060606;
+}
+[data-theme="light"] {
+  --bg: #ebebeb;
+  --panel: #f8f8f8;
+  --panel-2: #ffffff;
+  --ink: #181818;
+  --ink-soft: #585858;
+  --rule: #c8c8c8;
+  --cyan: #1a78a8;
+  --cyan-deep: #105878;
+  --yellow: #a07820;
+  --yellow-deep: #806010;
+  --ok: #2a6e1a;
+  --warn: #8a5a00;
+  --err: #8b1a1a;
+  --code-bg: #e0e0e0;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: ui-sans-serif, -apple-system, BlinkMacSystemFont, sans-serif;
+  background: var(--bg);
+  color: var(--ink);
+  min-height: 100vh;
+  padding: 2rem 1rem;
+  line-height: 1.55;
+}
+.wrap { max-width: 1200px; margin: 0 auto; }
+header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  border-bottom: 1px solid var(--cyan);
+  padding-bottom: 1rem;
+  margin-bottom: 1.75rem;
+}
+h1 {
+  font-size: 1.5rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: var(--cyan);
+}
+.subtitle {
+  font-size: 0.82rem;
+  color: var(--ink-soft);
+  margin-top: 0.25rem;
+  font-family: ui-monospace, SFMono-Regular, monospace;
+  letter-spacing: 0.04em;
+}
+.theme-btn {
+  background: transparent;
+  border: 1px solid var(--rule);
+  color: var(--ink-soft);
+  padding: 0.4rem 0.85rem;
+  font-size: 0.78rem;
+  font-family: inherit;
+  cursor: pointer;
+  border-radius: 2px;
+}
+.theme-btn:hover { border-color: var(--cyan); color: var(--cyan); }
+.lede {
+  font-size: 0.95rem;
+  margin-bottom: 1.75rem;
+  max-width: 65ch;
+  color: var(--ink);
+}
+.controls {
+  background: var(--panel);
+  border: 1px solid var(--rule);
+  padding: 1.25rem;
+  margin-bottom: 1.5rem;
+  border-radius: 3px;
+}
+.controls h2 {
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--cyan);
+  margin-bottom: 1rem;
+}
+.options-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 0.85rem 1.25rem;
+  margin-bottom: 1rem;
+}
+.option {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  cursor: pointer;
+}
+.option input[type="checkbox"] {
+  margin-top: 0.2rem;
+  flex-shrink: 0;
+}
+.option-label {
+  font-size: 0.88rem;
+  color: var(--ink);
+}
+.option-help {
+  font-size: 0.75rem;
+  color: var(--ink-soft);
+  margin-top: 0.15rem;
+}
+.merge-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.65rem;
+}
+.merge-row input[type="number"] {
+  width: 70px;
+  padding: 0.3rem 0.5rem;
+  background: var(--code-bg);
+  border: 1px solid var(--rule);
+  color: var(--ink);
+  font-family: ui-monospace, SFMono-Regular, monospace;
+  font-size: 0.85rem;
+  border-radius: 2px;
+}
+.btn-row {
+  display: flex;
+  gap: 0.65rem;
+  margin-top: 1rem;
+  flex-wrap: wrap;
+}
+button {
+  font-family: inherit;
+  font-size: 0.85rem;
+  padding: 0.55rem 1.1rem;
+  border: 1px solid var(--rule);
+  background: var(--panel);
+  color: var(--ink);
+  cursor: pointer;
+  border-radius: 2px;
+}
+button.primary {
+  background: var(--cyan);
+  border-color: var(--cyan);
+  color: var(--bg);
+  font-weight: 600;
+}
+[data-theme="dark"] button.primary {
+  color: var(--bg) !important;
+}
+button.primary:hover { background: var(--cyan-deep); border-color: var(--cyan-deep); }
+button.accent {
+  background: var(--yellow);
+  border-color: var(--yellow);
+  color: var(--bg);
+  font-weight: 600;
+}
+[data-theme="dark"] button.accent {
+  color: var(--bg) !important;
+}
+button.accent:hover { background: var(--yellow-deep); border-color: var(--yellow-deep); }
+button:hover { border-color: var(--cyan); }
+.io-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.25rem;
+  margin-bottom: 1.25rem;
+}
+.io-panel {
+  background: var(--panel);
+  border: 1px solid var(--rule);
+  padding: 1.25rem;
+  border-radius: 3px;
+  display: flex;
+  flex-direction: column;
+}
+.io-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.85rem;
+}
+.io-title {
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+.io-input .io-title { color: var(--yellow); }
+.io-output .io-title { color: var(--cyan); }
+.io-stats {
+  font-size: 0.72rem;
+  font-family: ui-monospace, SFMono-Regular, monospace;
+  color: var(--ink-soft);
+}
+textarea {
+  width: 100%;
+  flex: 1;
+  min-height: 280px;
+  background: var(--code-bg);
+  border: 1px solid var(--rule);
+  color: var(--ink);
+  padding: 0.85rem;
+  font-family: ui-monospace, SFMono-Regular, monospace;
+  font-size: 0.82rem;
+  line-height: 1.55;
+  resize: vertical;
+  border-radius: 2px;
+}
+textarea:focus { outline: 2px solid var(--cyan); outline-offset: 1px; }
+.diff-stats {
+  background: var(--panel);
+  border: 1px solid var(--rule);
+  padding: 1rem 1.25rem;
+  border-radius: 3px;
+  margin-bottom: 1.25rem;
+  font-size: 0.85rem;
+  display: none;
+}
+.diff-stats.show { display: block; }
+.diff-stats h2 {
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--cyan);
+  margin-bottom: 0.65rem;
+}
+.diff-row {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: 0.3rem 1.25rem;
+  font-family: ui-monospace, SFMono-Regular, monospace;
+  font-size: 0.85rem;
+}
+.diff-row dt { color: var(--ink-soft); }
+.diff-row dd { color: var(--ink); }
+.error-msg {
+  background: var(--code-bg);
+  border-left: 4px solid var(--err);
+  padding: 0.85rem 1rem;
+  border-radius: 2px;
+  font-size: 0.9rem;
+  color: var(--err);
+  margin-top: 0.85rem;
+  font-family: ui-monospace, SFMono-Regular, monospace;
+}
+.action-row {
+  display: flex;
+  gap: 0.65rem;
+  margin-top: 0.85rem;
+  flex-wrap: wrap;
+}
+footer {
+  margin-top: 2.5rem;
+  padding-top: 1.25rem;
+  border-top: 1px solid var(--rule);
+  font-size: 0.78rem;
+  color: var(--ink-soft);
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.85rem;
+}
+footer a { color: var(--cyan); text-decoration: none; }
+footer a:hover { text-decoration: underline; }
+@media (max-width: 800px) {
+  body { padding: 1rem 0.75rem; }
+  h1 { font-size: 1.25rem; }
+  .io-grid { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+  <div>
+    <h1>SRT Cleaner</h1>
+    <div class="subtitle">// fix capitalization, merge short, strip fillers</div>
+  </div>
+  <button class="theme-btn" id="theme-toggle" type="button">Light</button>
+</header>
+
+<p class="lede">Auto-generated subtitle files (SRT) often need cleanup before they're presentable: every word lowercased, fillers like "uh" and "um", segments under two seconds that flicker on screen. This tool applies the cleanups you choose and shows the diff. Browser only.</p>
+
+<div class="controls">
+  <h2>Cleanup options</h2>
+  <div class="options-grid">
+    <label class="option">
+      <input type="checkbox" id="opt-capitalize" checked>
+      <div>
+        <div class="option-label">Fix sentence capitalization</div>
+        <div class="option-help">Capitalize first word of each segment and after sentence-ending punctuation.</div>
+      </div>
+    </label>
+    <label class="option">
+      <input type="checkbox" id="opt-fillers" checked>
+      <div>
+        <div class="option-label">Strip filler words</div>
+        <div class="option-help">Remove "uh", "um", "like" (filler use), "you know" (interjection use), "I mean" (discourse marker).</div>
+      </div>
+    </label>
+    <label class="option">
+      <input type="checkbox" id="opt-merge" checked>
+      <div>
+        <div class="option-label">Merge short segments</div>
+        <div class="option-help">Combine consecutive segments shorter than threshold into a single readable segment.</div>
+        <div class="merge-row">
+          <span style="font-size: 0.82rem; color: var(--ink-soft);">Threshold (seconds):</span>
+          <input type="number" id="merge-threshold" value="2" min="0.5" max="10" step="0.1">
+        </div>
+      </div>
+    </label>
+    <label class="option">
+      <input type="checkbox" id="opt-trim">
+      <div>
+        <div class="option-label">Trim trailing whitespace</div>
+        <div class="option-help">Remove extra spaces and newlines inside captions.</div>
+      </div>
+    </label>
+    <label class="option">
+      <input type="checkbox" id="opt-renumber" checked>
+      <div>
+        <div class="option-label">Renumber sequence indices</div>
+        <div class="option-help">After merges and removals, renumber so indices are 1, 2, 3...</div>
+      </div>
+    </label>
+  </div>
+</div>
+
+<div class="io-grid">
+  <div class="io-panel io-input">
+    <div class="io-head">
+      <div class="io-title">Input SRT</div>
+      <div class="io-stats" id="in-stats"></div>
+    </div>
+    <textarea id="srt-input" placeholder="1
+00:00:01,000 --> 00:00:02,500
+uh hello and welcome
+
+2
+00:00:02,500 --> 00:00:03,000
+um
+
+3
+00:00:03,000 --> 00:00:06,000
+to today's video
+
+..." spellcheck="false"></textarea>
+    <div class="action-row">
+      <button class="primary" id="clean-btn" type="button">Clean</button>
+      <button id="sample-btn" type="button">Load sample</button>
+      <button id="clear-btn" type="button">Clear input</button>
+    </div>
+  </div>
+  <div class="io-panel io-output">
+    <div class="io-head">
+      <div class="io-title">Output SRT</div>
+      <div class="io-stats" id="out-stats"></div>
+    </div>
+    <textarea id="srt-output" readonly placeholder="Cleaned SRT appears here."></textarea>
+    <div class="action-row">
+      <button class="accent" id="copy-btn" type="button">Copy</button>
+      <button id="download-btn" type="button">Download .srt</button>
+    </div>
+  </div>
+</div>
+
+<div class="diff-stats" id="diff-stats">
+  <h2>What changed</h2>
+  <dl class="diff-row" id="diff-list"></dl>
+</div>
+
+<div id="error-box"></div>
+
+<footer>
+  <div>Video SRT Cleaner. MIT licensed. <a href="https://github.com/0xelitesystem/video-srt-cleaner" target="_blank" rel="noopener">View source</a>.</div>
+  <div>Browser-based. No upload. Files stay on your device.</div>
+</footer>
+</div>
+
+<script>
+const $ = (id) => document.getElementById(id);
+const themeBtn = $("theme-toggle");
+function setTheme(t) {
+  document.documentElement.setAttribute("data-theme", t);
+  themeBtn.textContent = t === "dark" ? "Light" : "Dark";
+}
+themeBtn.addEventListener("click", () => {
+  const cur = document.documentElement.getAttribute("data-theme") || "dark";
+  setTheme(cur === "dark" ? "light" : "dark");
+});
+
+// SRT parsing
+function parseTime(s) {
+  // "HH:MM:SS,mmm" -> seconds (float)
+  const m = s.trim().match(/^(\d{1,2}):(\d{2}):(\d{2})[,.](\d{1,3})$/);
+  if (!m) return null;
+  const h = parseInt(m[1]);
+  const min = parseInt(m[2]);
+  const sec = parseInt(m[3]);
+  const ms = parseInt(m[4].padEnd(3, "0").substring(0, 3));
+  return h * 3600 + min * 60 + sec + ms / 1000;
+}
+
+function formatTime(t) {
+  const h = Math.floor(t / 3600);
+  const m = Math.floor((t % 3600) / 60);
+  const s = Math.floor(t % 60);
+  const ms = Math.round((t - Math.floor(t)) * 1000);
+  const pad = (n, len = 2) => String(n).padStart(len, "0");
+  return `${pad(h)}:${pad(m)}:${pad(s)},${pad(ms, 3)}`;
+}
+
+function parseSRT(text) {
+  const blocks = text.replace(/\r\n/g, "\n").split(/\n\s*\n/);
+  const out = [];
+  for (const block of blocks) {
+    const lines = block.trim().split("\n");
+    if (lines.length < 2) continue;
+    let idx = 0;
+    let timeLine = lines[0];
+    let textStart = 1;
+    if (/^\d+$/.test(lines[0].trim()) && lines.length >= 3) {
+      idx = parseInt(lines[0]);
+      timeLine = lines[1];
+      textStart = 2;
+    }
+    const tm = timeLine.match(/(\d{1,2}:\d{2}:\d{2}[,.]\d{1,3})\s*-->\s*(\d{1,2}:\d{2}:\d{2}[,.]\d{1,3})/);
+    if (!tm) continue;
+    const start = parseTime(tm[1]);
+    const end = parseTime(tm[2]);
+    if (start === null || end === null) continue;
+    const captionText = lines.slice(textStart).join("\n").trim();
+    out.push({ idx, start, end, text: captionText });
+  }
+  return out;
+}
+
+function serializeSRT(segs) {
+  return segs.map((s, i) => `${i + 1}\n${formatTime(s.start)} --> ${formatTime(s.end)}\n${s.text}`).join("\n\n");
+}
+
+const FILLERS = [
+  /\b(?:uh|uhh+|uhm+|um|umm+|er|erm)\b[,.\s]*/gi,
+  /\b(?:you know)\b[,.\s]*/gi,
+  /\b(?:i mean)\b[,.\s]*/gi,
+  /\b(?:like,)\s/gi,
+  /\bsort of\b/gi,
+  /\bkind of\b/gi,
+];
+
+function stripFillers(text) {
+  let cleaned = text;
+  for (const re of FILLERS) {
+    cleaned = cleaned.replace(re, " ");
+  }
+  cleaned = cleaned.replace(/\s+/g, " ").replace(/\s+([,.!?])/g, "$1").trim();
+  return cleaned;
+}
+
+function capitalize(text) {
+  if (!text) return text;
+  // Capitalize first character
+  let result = text.charAt(0).toUpperCase() + text.slice(1);
+  // Capitalize first letter after sentence-ending punctuation
+  result = result.replace(/([.!?])\s+([a-z])/g, (m, p, c) => p + " " + c.toUpperCase());
+  // Capitalize "i" as a standalone word
+  result = result.replace(/\bi\b/g, "I");
+  result = result.replace(/\bi'(m|ve|d|ll|s)\b/g, "I'$1");
+  return result;
+}
+
+function trimWhitespace(text) {
+  return text.replace(/[ \t]+/g, " ").replace(/\s*\n\s*/g, "\n").trim();
+}
+
+function clean() {
+  $("error-box").innerHTML = "";
+  const input = $("srt-input").value.trim();
+  if (!input) {
+    $("error-box").innerHTML = `<div class="error-msg">Paste an SRT file to clean.</div>`;
+    $("diff-stats").classList.remove("show");
+    return;
+  }
+
+  let segs;
+  try {
+    segs = parseSRT(input);
+  } catch (e) {
+    $("error-box").innerHTML = `<div class="error-msg">SRT parse error: ${e.message}</div>`;
+    return;
+  }
+
+  if (segs.length === 0) {
+    $("error-box").innerHTML = `<div class="error-msg">No valid SRT segments found. Expected format: index, time line (HH:MM:SS,mmm --> HH:MM:SS,mmm), text, blank line.</div>`;
+    return;
+  }
+
+  const originalCount = segs.length;
+  const originalChars = segs.reduce((sum, s) => sum + s.text.length, 0);
+
+  let working = segs.map(s => ({ ...s }));
+
+  // Apply transformations in order
+  let fillerRemovedCount = 0;
+  if ($("opt-fillers").checked) {
+    for (const s of working) {
+      const before = s.text;
+      s.text = stripFillers(s.text);
+      if (s.text !== before) fillerRemovedCount++;
+    }
+    // Remove segments whose text is now empty
+    working = working.filter(s => s.text.length > 0);
+  }
+
+  if ($("opt-trim").checked) {
+    for (const s of working) {
+      s.text = trimWhitespace(s.text);
+    }
+    working = working.filter(s => s.text.length > 0);
+  }
+
+  let mergeCount = 0;
+  if ($("opt-merge").checked) {
+    const threshold = parseFloat($("merge-threshold").value) || 2;
+    const merged = [];
+    let pending = null;
+    for (const s of working) {
+      if (pending === null) {
+        pending = { ...s };
+      } else {
+        const dur = pending.end - pending.start;
+        const gap = s.start - pending.end;
+        if (dur < threshold && gap < 1.0) {
+          // Merge
+          pending.end = s.end;
+          pending.text = (pending.text + " " + s.text).replace(/\s+/g, " ").trim();
+          mergeCount++;
+        } else {
+          merged.push(pending);
+          pending = { ...s };
+        }
+      }
+    }
+    if (pending) merged.push(pending);
+    working = merged;
+  }
+
+  if ($("opt-capitalize").checked) {
+    for (const s of working) {
+      s.text = capitalize(s.text);
+    }
+  }
+
+  if ($("opt-renumber").checked) {
+    working.forEach((s, i) => { s.idx = i + 1; });
+  }
+
+  const output = serializeSRT(working);
+  $("srt-output").value = output;
+
+  // Stats
+  const cleanedCount = working.length;
+  const cleanedChars = working.reduce((sum, s) => sum + s.text.length, 0);
+  $("in-stats").textContent = `${originalCount} segments / ${originalChars} chars`;
+  $("out-stats").textContent = `${cleanedCount} segments / ${cleanedChars} chars`;
+
+  const diffEl = $("diff-list");
+  diffEl.innerHTML = "";
+  const segDelta = originalCount - cleanedCount;
+  const charDelta = originalChars - cleanedChars;
+  diffEl.innerHTML = `
+    <dt>Segments before</dt><dd>${originalCount}</dd>
+    <dt>Segments after</dt><dd>${cleanedCount}${segDelta > 0 ? ` (-${segDelta})` : segDelta < 0 ? ` (+${-segDelta})` : ""}</dd>
+    <dt>Characters before</dt><dd>${originalChars}</dd>
+    <dt>Characters after</dt><dd>${cleanedChars}${charDelta > 0 ? ` (-${charDelta})` : ""}</dd>
+    ${$("opt-fillers").checked ? `<dt>Segments with fillers removed</dt><dd>${fillerRemovedCount}</dd>` : ""}
+    ${$("opt-merge").checked ? `<dt>Merges performed</dt><dd>${mergeCount}</dd>` : ""}
+  `;
+  $("diff-stats").classList.add("show");
+}
+
+$("clean-btn").addEventListener("click", clean);
+
+$("clear-btn").addEventListener("click", () => {
+  $("srt-input").value = "";
+  $("srt-output").value = "";
+  $("in-stats").textContent = "";
+  $("out-stats").textContent = "";
+  $("diff-stats").classList.remove("show");
+  $("error-box").innerHTML = "";
+});
+
+$("copy-btn").addEventListener("click", async () => {
+  const text = $("srt-output").value;
+  if (!text) return;
+  try {
+    await navigator.clipboard.writeText(text);
+    const btn = $("copy-btn");
+    const orig = btn.textContent;
+    btn.textContent = "Copied";
+    setTimeout(() => { btn.textContent = orig; }, 1500);
+  } catch (err) {
+    $("srt-output").select();
+    try { document.execCommand("copy"); } catch (e2) {}
+  }
+});
+
+$("download-btn").addEventListener("click", () => {
+  const text = $("srt-output").value;
+  if (!text) return;
+  const blob = new Blob([text], { type: "text/plain;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "cleaned.srt";
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+});
+
+$("sample-btn").addEventListener("click", () => {
+  $("srt-input").value = `1
+00:00:00,500 --> 00:00:01,200
+uh
+
+2
+00:00:01,200 --> 00:00:02,400
+hello and welcome
+
+3
+00:00:02,400 --> 00:00:03,100
+um
+
+4
+00:00:03,100 --> 00:00:06,000
+to today's video. i wanted to talk about
+
+5
+00:00:06,000 --> 00:00:09,500
+you know, the thing where like, you have to clean your captions
+
+6
+00:00:09,500 --> 00:00:13,000
+because the auto-generated ones are kind of rough
+
+7
+00:00:13,000 --> 00:00:14,500
+i mean
+
+8
+00:00:14,500 --> 00:00:18,000
+they're functional but they need work before publishing`;
+});
+
+setTheme("dark");
+</script>
+</body>
+</html>
