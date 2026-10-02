@@ -16,7 +16,7 @@ Open [`index.html`](./index.html). Paste your SRT in the left panel, choose clea
 - **Trim trailing whitespace** - collapse double spaces, normalize newlines
 - **Renumber sequence indices** - after merges and removals, renumber 1, 2, 3...
 
-## Why
+## Why this exists
 
 YouTube auto-captions and most ASR tools produce SRT files that work but read badly:
 
@@ -28,6 +28,8 @@ YouTube auto-captions and most ASR tools produce SRT files that work but read ba
 
 You're going to fix all of this manually before uploading polished captions. This automates the boring part. You still review the output before uploading.
 
+It is one HTML file with no dependencies, no tracking and no network calls, released under MIT.
+
 ## What this is NOT
 
 - Not a transcription tool. Bring your own SRT.
@@ -38,6 +40,8 @@ You're going to fix all of this manually before uploading polished captions. Thi
 ## Privacy
 
 The SRT file you paste stays in your browser. No upload, no requests, no analytics. Verify with DevTools network tab.
+
+The page saves one thing in localStorage: your light or dark theme choice, under the key `theme`. Download builds the cleaned file inside your browser.
 
 ## Run locally
 
